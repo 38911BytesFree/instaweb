@@ -2,7 +2,7 @@
   "targetUsername": "yukipanvel",
   "postsActorId": "apify/instagram-post-scraper",
   "storiesActorId": "apify/instagram-story-scraper",
-  "resultsLimit": 120,
+  "resultsLimit": 12,
   "fetchPosts": true,
   "fetchStories": true,
   "maxArchivedPosts": 0,

@@ -6,7 +6,9 @@
   // State
   let archiveData = { profile: { username: "yukipanvel" }, stories: [], posts: [] };
   let activeTab = "posts";
+  let activeMonthKey = "all";
   let searchQuery = "";
+  const collapsedMonths = new Set();
 
   // Story Player State
   let storyGroups = [];
@@ -38,7 +40,8 @@
     storiesTray: document.getElementById("stories-tray"),
     tabButtons: document.querySelectorAll(".tab-btn"),
     searchInput: document.getElementById("search-input"),
-    mediaGrid: document.getElementById("media-grid"),
+    monthNav: document.getElementById("month-nav"),
+    mediaSections: document.getElementById("media-sections"),
     emptyState: document.getElementById("empty-state"),
 
     // Story Modal
@@ -87,6 +90,24 @@
   function formatDateKey(isoStr) {
     if (!isoStr) return "Unknown Date";
     return isoStr.slice(0, 10);
+  }
+
+  function formatMonthKey(isoStr) {
+    if (!isoStr || isoStr.length < 7) return "Unknown";
+    return isoStr.slice(0, 7); // YYYY-MM
+  }
+
+  function formatMonthLabel(monthKey, short = false) {
+    if (!monthKey || monthKey === "Unknown" || !/^\d{4}-\d{2}$/.test(monthKey)) {
+      return "Unknown Month";
+    }
+    const [year, month] = monthKey.split("-").map(Number);
+    const date = new Date(Date.UTC(year, month - 1, 1));
+    return date.toLocaleString(undefined, {
+      month: short ? "short" : "long",
+      year: "numeric",
+      timeZone: "UTC",
+    });
   }
 
   function isStoryActive(story) {
@@ -212,8 +233,94 @@
     });
   }
 
+  function createMediaCard(kind, item) {
+    const card = document.createElement("article");
+    card.className = `grid-card${kind === "story" ? " story-aspect" : ""}`;
+
+    if (kind === "post") {
+      const firstMedia = (item.media && item.media[0]) || {};
+      const badgeText =
+        item.mediaType === "carousel"
+          ? `❐ ${item.media.length}`
+          : item.mediaType === "video"
+          ? "▶ Video"
+          : "";
+
+      if (firstMedia.type === "video") {
+        card.innerHTML = `
+          <video src="${firstMedia.localPath}" ${firstMedia.posterPath ? `poster="${firstMedia.posterPath}"` : ""} muted playsinline preload="metadata"></video>
+          ${badgeText ? `<span class="card-badge">${badgeText}</span>` : ""}
+          <div class="card-overlay">
+            <span class="card-overlay-date">${formatDateKey(item.takenAt)}</span>
+            <p class="card-overlay-caption">${escapeHtml(item.caption || "")}</p>
+          </div>
+        `;
+      } else {
+        card.innerHTML = `
+          <img src="${firstMedia.localPath || ""}" alt="${escapeHtml(item.caption || "Instagram post")}" loading="lazy" />
+          ${badgeText ? `<span class="card-badge">${badgeText}</span>` : ""}
+          <div class="card-overlay">
+            <span class="card-overlay-date">${formatDateKey(item.takenAt)}</span>
+            <p class="card-overlay-caption">${escapeHtml(item.caption || "")}</p>
+          </div>
+        `;
+      }
+      card.addEventListener("click", () => openPostModal(item));
+    } else {
+      const isActive = isStoryActive(item);
+      const badgeText = isActive ? "● Live 24h" : formatDateKey(item.takenAt);
+      if (item.mediaType === "video") {
+        card.innerHTML = `
+          <video src="${item.localPath}" ${item.thumbnailPath ? `poster="${item.thumbnailPath}"` : ""} muted playsinline preload="metadata"></video>
+          <span class="card-badge">${badgeText}</span>
+        `;
+      } else {
+        card.innerHTML = `
+          <img src="${item.localPath}" alt="Archived story" loading="lazy" />
+          <span class="card-badge">${badgeText}</span>
+        `;
+      }
+      card.addEventListener("click", () => openSingleStoryInPlayer(item));
+    }
+
+    return card;
+  }
+
+  function renderMonthNav(sortedMonths, byMonth, totalCount) {
+    els.monthNav.innerHTML = "";
+    if (sortedMonths.length <= 1) {
+      els.monthNav.hidden = true;
+      return;
+    }
+    els.monthNav.hidden = false;
+
+    const allBtn = document.createElement("button");
+    allBtn.type = "button";
+    allBtn.className = `month-pill${activeMonthKey === "all" ? " active" : ""}`;
+    allBtn.textContent = `All Months (${totalCount})`;
+    allBtn.addEventListener("click", () => {
+      activeMonthKey = "all";
+      renderGrid(archiveData);
+    });
+    els.monthNav.appendChild(allBtn);
+
+    sortedMonths.forEach((monthKey) => {
+      const count = byMonth.get(monthKey).length;
+      const pill = document.createElement("button");
+      pill.type = "button";
+      pill.className = `month-pill${activeMonthKey === monthKey ? " active" : ""}`;
+      pill.textContent = `${formatMonthLabel(monthKey, true)} (${count})`;
+      pill.addEventListener("click", () => {
+        activeMonthKey = monthKey;
+        collapsedMonths.delete(monthKey);
+        renderGrid(archiveData);
+      });
+      els.monthNav.appendChild(pill);
+    });
+  }
+
   function renderGrid(data) {
-    els.mediaGrid.innerHTML = "";
+    els.mediaSections.innerHTML = "";
     const q = searchQuery.trim().toLowerCase();
 
     let items = [];
@@ -240,62 +347,74 @@
     }
 
     if (items.length === 0) {
+      els.monthNav.hidden = true;
       els.emptyState.hidden = false;
       return;
     }
     els.emptyState.hidden = true;
 
-    items.forEach(({ kind, item }) => {
-      const card = document.createElement("article");
-      card.className = `grid-card${kind === "story" ? " story-aspect" : ""}`;
-
-      if (kind === "post") {
-        const firstMedia = (item.media && item.media[0]) || {};
-        const badgeText =
-          item.mediaType === "carousel"
-            ? `❐ ${item.media.length}`
-            : item.mediaType === "video"
-            ? "▶ Video"
-            : "";
-
-        if (firstMedia.type === "video") {
-          card.innerHTML = `
-            <video src="${firstMedia.localPath}" ${firstMedia.posterPath ? `poster="${firstMedia.posterPath}"` : ""} muted playsinline preload="metadata"></video>
-            ${badgeText ? `<span class="card-badge">${badgeText}</span>` : ""}
-            <div class="card-overlay">
-              <span class="card-overlay-date">${formatDateKey(item.takenAt)}</span>
-              <p class="card-overlay-caption">${escapeHtml(item.caption || "")}</p>
-            </div>
-          `;
-        } else {
-          card.innerHTML = `
-            <img src="${firstMedia.localPath || ""}" alt="${escapeHtml(item.caption || "Instagram post")}" loading="lazy" />
-            ${badgeText ? `<span class="card-badge">${badgeText}</span>` : ""}
-            <div class="card-overlay">
-              <span class="card-overlay-date">${formatDateKey(item.takenAt)}</span>
-              <p class="card-overlay-caption">${escapeHtml(item.caption || "")}</p>
-            </div>
-          `;
-        }
-        card.addEventListener("click", () => openPostModal(item));
-      } else {
-        const isActive = isStoryActive(item);
-        const badgeText = isActive ? "● Live 24h" : formatDateKey(item.takenAt);
-        if (item.mediaType === "video") {
-          card.innerHTML = `
-            <video src="${item.localPath}" ${item.thumbnailPath ? `poster="${item.thumbnailPath}"` : ""} muted playsinline preload="metadata"></video>
-            <span class="card-badge">${badgeText}</span>
-          `;
-        } else {
-          card.innerHTML = `
-            <img src="${item.localPath}" alt="Archived story" loading="lazy" />
-            <span class="card-badge">${badgeText}</span>
-          `;
-        }
-        card.addEventListener("click", () => openSingleStoryInPlayer(item));
+    // Group items by YYYY-MM
+    const byMonth = new Map();
+    for (const entry of items) {
+      const monthKey = formatMonthKey(entry.item.takenAt);
+      if (!byMonth.has(monthKey)) {
+        byMonth.set(monthKey, []);
       }
+      byMonth.get(monthKey).push(entry);
+    }
 
-      els.mediaGrid.appendChild(card);
+    const sortedMonths = Array.from(byMonth.keys()).sort((a, b) => b.localeCompare(a));
+    if (activeMonthKey !== "all" && !byMonth.has(activeMonthKey)) {
+      activeMonthKey = "all";
+    }
+
+    renderMonthNav(sortedMonths, byMonth, items.length);
+
+    const visibleMonths =
+      activeMonthKey === "all" ? sortedMonths : sortedMonths.filter((m) => m === activeMonthKey);
+
+    visibleMonths.forEach((monthKey) => {
+      const monthEntries = byMonth
+        .get(monthKey)
+        .slice()
+        .sort((a, b) => new Date(b.item.takenAt) - new Date(a.item.takenAt));
+
+      const isCollapsed = collapsedMonths.has(monthKey);
+      const section = document.createElement("section");
+      section.className = `month-group${isCollapsed ? " collapsed" : ""}`;
+      section.id = `month-${monthKey}`;
+
+      const header = document.createElement("div");
+      header.className = "month-header";
+      const itemLabel = monthEntries.length === 1 ? "1 item" : `${monthEntries.length} items`;
+      header.innerHTML = `
+        <div class="month-title-wrap">
+          <h3 class="month-title">${formatMonthLabel(monthKey, false)}</h3>
+          <span class="month-count-badge">${itemLabel}</span>
+        </div>
+        <button class="month-toggle-btn" type="button" aria-expanded="${!isCollapsed}">
+          ${isCollapsed ? "Show ▾" : "Hide ▴"}
+        </button>
+      `;
+
+      header.addEventListener("click", () => {
+        if (collapsedMonths.has(monthKey)) {
+          collapsedMonths.delete(monthKey);
+        } else {
+          collapsedMonths.add(monthKey);
+        }
+        renderGrid(archiveData);
+      });
+
+      const grid = document.createElement("div");
+      grid.className = "media-grid";
+      monthEntries.forEach(({ kind, item }) => {
+        grid.appendChild(createMediaCard(kind, item));
+      });
+
+      section.appendChild(header);
+      section.appendChild(grid);
+      els.mediaSections.appendChild(section);
     });
   }
 

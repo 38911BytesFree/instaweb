@@ -23,6 +23,7 @@
   // Post Carousel State
   let activePost = null;
   let activeSlideIndex = 0;
+  let currentSlideRenderToken = 0;
 
   // DOM Elements
   const els = {
@@ -597,9 +598,20 @@
   }
 
   // Post Lightbox Modal Logic
+  function preloadPostSlides(post) {
+    const slides = (post && post.media) || [];
+    slides.forEach((slide) => {
+      if (slide.type !== "video" && slide.localPath) {
+        const preloader = new Image();
+        preloader.src = slide.localPath;
+      }
+    });
+  }
+
   function openPostModal(post) {
     activePost = post;
     activeSlideIndex = 0;
+    els.postStage.innerHTML = "";
     els.postModal.hidden = false;
     document.body.style.overflow = "hidden";
 
@@ -611,10 +623,12 @@
     els.postComments.textContent = `💬 ${post.commentsCount || 0}`;
     els.postLink.href = post.permalink || "#";
 
+    preloadPostSlides(post);
     renderPostSlide();
   }
 
   function closePostModal() {
+    currentSlideRenderToken += 1;
     els.postStage.innerHTML = "";
     els.postModal.hidden = true;
     document.body.style.overflow = "";
@@ -625,22 +639,7 @@
     if (!activePost) return;
     const slides = activePost.media || [];
     const slide = slides[activeSlideIndex] || {};
-    els.postStage.innerHTML = "";
-
-    if (slide.type === "video") {
-      const video = document.createElement("video");
-      video.src = slide.localPath;
-      if (slide.posterPath) video.poster = slide.posterPath;
-      video.controls = true;
-      video.autoplay = true;
-      video.playsInline = true;
-      els.postStage.appendChild(video);
-    } else if (slide.localPath) {
-      const img = document.createElement("img");
-      img.src = slide.localPath;
-      img.alt = activePost.caption || "Instagram post slide";
-      els.postStage.appendChild(img);
-    }
+    const renderToken = ++currentSlideRenderToken;
 
     const hasMultiple = slides.length > 1;
     els.carouselPrevBtn.hidden = !hasMultiple || activeSlideIndex === 0;
@@ -653,6 +652,34 @@
         dot.className = `carousel-dot${idx === activeSlideIndex ? " active" : ""}`;
         els.carouselDots.appendChild(dot);
       });
+    }
+
+    if (slide.type === "video") {
+      const video = document.createElement("video");
+      video.src = slide.localPath;
+      if (slide.posterPath) video.poster = slide.posterPath;
+      video.controls = true;
+      video.autoplay = true;
+      video.playsInline = true;
+      els.postStage.replaceChildren(video);
+    } else if (slide.localPath) {
+      const img = document.createElement("img");
+      img.alt = activePost.caption || "Instagram post slide";
+      img.src = slide.localPath;
+
+      const commitImage = () => {
+        if (renderToken !== currentSlideRenderToken) return;
+        els.postStage.replaceChildren(img);
+      };
+
+      if (typeof img.decode === "function") {
+        img.decode().then(commitImage).catch(commitImage);
+      } else if (img.complete) {
+        commitImage();
+      } else {
+        img.addEventListener("load", commitImage, { once: true });
+        img.addEventListener("error", commitImage, { once: true });
+      }
     }
   }
 

@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Instagram Archive — Stories &amp; Posts</title>
+  <meta name="description" content="Photo, video, and story gallery archive." />
+  <meta property="og:title" content="Instagram Archive — Stories &amp; Posts" />
+  <meta property="og:description" content="Photo, video, and story gallery archive." />
+  <meta property="og:type" content="website" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -87,11 +91,8 @@
     <!-- Main Media Gallery (Grouped by Month) -->
     <section aria-label="Archived media gallery">
       <div id="empty-state" class="empty-state" hidden>
-        <h3>No archived items match this view yet</h3>
-        <p>
-          Once the GitHub Actions workflow runs with your <code>APIFY_API_TOKEN</code>,
-          downloaded stories and posts will appear here automatically.
-        </p>
+        <h3>No archived items match this view</h3>
+        <p>Try clearing your search filter or switching tabs.</p>
       </div>
       <div id="media-sections" class="media-sections"></div>
     </section>

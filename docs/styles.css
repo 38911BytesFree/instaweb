@@ -867,20 +867,213 @@ body {
 }
 
 @media (max-width: 768px) {
-  .profile-header {
-    flex-direction: column;
-    text-align: center;
-    gap: 18px;
+  .container {
+    padding: 0 10px;
   }
-  .profile-title-row,
+
+  /* Slimmer Top Nav on Mobile */
+  .nav-inner {
+    height: 44px;
+  }
+  .brand {
+    font-size: 0.98rem;
+    gap: 7px;
+  }
+  .brand-dot {
+    width: 10px;
+    height: 10px;
+  }
+  .sync-badge {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+  }
+
+  /* Compact Single-Row Profile Bar */
+  .profile-header {
+    flex-direction: row;
+    align-items: center;
+    text-align: left;
+    gap: 12px;
+    padding: 10px 0;
+  }
+  .avatar-ring {
+    width: 46px;
+    height: 46px;
+    padding: 2px;
+  }
+  .avatar-fallback {
+    font-size: 0.95rem;
+    border-width: 2px;
+  }
+  .avatar-img {
+    border-width: 2px;
+  }
+  .profile-title-row {
+    justify-content: flex-start;
+    gap: 10px;
+    margin-bottom: 2px;
+  }
+  .profile-title-row h1 {
+    font-size: 1.05rem;
+  }
+  .external-link {
+    font-size: 0.76rem;
+  }
   .profile-stats {
-    justify-content: center;
+    justify-content: flex-start;
+    gap: 12px;
+    font-size: 0.76rem;
+    margin-bottom: 0;
+    color: var(--text-secondary);
+  }
+  .profile-stats strong {
+    color: var(--text-primary);
+  }
+  .profile-bio {
+    margin-top: 2px;
+  }
+  .fullname {
+    font-size: 0.78rem;
+    margin-bottom: 0;
+  }
+  .bio-text {
+    font-size: 0.76rem;
+  }
+
+  /* Compact Stories Strip */
+  .stories-section {
+    padding: 8px 0;
+  }
+  .stories-section .section-header {
+    display: none;
+  }
+  .stories-tray {
+    gap: 12px;
+    padding-bottom: 4px;
+  }
+  .story-ring-item {
+    min-width: 62px;
+    gap: 4px;
+  }
+  .story-ring-circle {
+    width: 54px;
+    height: 54px;
+    padding: 2px;
+  }
+  .story-ring-label {
+    font-size: 0.7rem;
+    max-width: 64px;
+  }
+  .story-ring-count {
+    display: none;
+  }
+
+  /* Compact Controls & Month Pills */
+  .controls-bar {
+    padding: 8px 0;
+    gap: 8px;
+  }
+  .tabs {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .tab-btn {
+    padding: 6px 8px;
+    font-size: 0.78rem;
+    text-align: center;
+  }
+  .search-wrapper {
+    max-width: 100%;
+    width: 100%;
+  }
+  .search-wrapper input {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+  .month-nav {
+    padding: 2px 0 10px;
+    gap: 6px;
+  }
+  .month-pill {
+    padding: 4px 10px;
+    font-size: 0.74rem;
+  }
+
+  /* Edge-to-Edge 3-Column Photo Grid on Mobile */
+  .media-sections {
+    gap: 18px;
+    padding-bottom: 36px;
+  }
+  .month-group {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+  }
+  .month-header {
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+  }
+  .month-title {
+    font-size: 0.98rem;
+  }
+  .month-count-badge {
+    font-size: 0.7rem;
+    padding: 1px 8px;
+  }
+  .month-toggle-btn {
+    padding: 2px 8px;
+    font-size: 0.72rem;
   }
   .media-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+  }
+  .grid-card {
+    border-radius: 4px;
+  }
+  .card-badge {
+    top: 5px;
+    right: 5px;
+    padding: 2px 5px;
+    font-size: 0.65rem;
+  }
+  .card-overlay {
+    display: none;
+  }
+
+  /* Mobile Post Lightbox */
+  .post-modal {
+    padding: 10px;
   }
   .post-modal-content {
     grid-template-columns: 1fr;
     max-height: 92vh;
+  }
+  .post-modal-media {
+    min-height: 220px;
+    max-height: 56vh;
+  }
+  .post-modal-stage,
+  .post-modal-stage img,
+  .post-modal-stage video {
+    max-height: 56vh;
+  }
+  .post-modal-sidebar {
+    padding: 12px 14px;
+    max-height: 34vh;
+  }
+  .post-sidebar-header {
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+  }
+  .post-caption {
+    font-size: 0.84rem;
+    margin-bottom: 10px;
+  }
+  .post-sidebar-footer {
+    padding-top: 8px;
   }
 }

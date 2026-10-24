@@ -37,6 +37,7 @@
     statActiveStories: document.getElementById("stat-active-stories"),
     fullName: document.getElementById("profile-fullname"),
     biography: document.getElementById("profile-biography"),
+    storiesSection: document.getElementById("stories-section"),
     storiesTray: document.getElementById("stories-tray"),
     tabButtons: document.querySelectorAll(".tab-btn"),
     searchInput: document.getElementById("search-input"),
@@ -171,8 +172,11 @@
     const username = profile.username || "yukipanvel";
     els.username.textContent = `@${username}`;
     els.igLink.href = `https://www.instagram.com/${username}/`;
-    els.fullName.textContent = profile.fullName || username;
+    const fullNameText = profile.fullName && profile.fullName !== username ? profile.fullName : "";
+    els.fullName.textContent = fullNameText;
+    els.fullName.hidden = !fullNameText;
     els.biography.textContent = profile.biography || "";
+    els.biography.hidden = !profile.biography;
 
     const initials = username.slice(0, 2).toUpperCase();
     els.avatarFallback.textContent = initials;
@@ -210,11 +214,13 @@
   function renderStoriesTray() {
     els.storiesTray.innerHTML = "";
     if (storyGroups.length === 0) {
-      const msg = document.createElement("p");
-      msg.className = "section-subtitle";
-      msg.textContent = "No stories archived yet.";
-      els.storiesTray.appendChild(msg);
+      if (els.storiesSection) {
+        els.storiesSection.hidden = true;
+      }
       return;
+    }
+    if (els.storiesSection) {
+      els.storiesSection.hidden = false;
     }
 
     storyGroups.forEach((group, idx) => {

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Instagram Archive — Stories &amp; Posts</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="top-nav">
+    <div class="container nav-inner">
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <span class="brand-title">InstaArchive</span>
+      </div>
+      <div class="nav-actions">
+        <span id="last-synced-badge" class="sync-badge">Waiting for first sync</span>
+        <button id="demo-toggle-btn" class="btn-secondary" type="button" hidden>
+          Preview Demo Data
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Profile Header -->
+    <section class="profile-header" aria-label="Account profile">
+      <div id="profile-avatar-ring" class="avatar-ring" role="button" tabindex="0" title="Click to play latest stories">
+        <div id="profile-avatar-fallback" class="avatar-fallback">IG</div>
+        <img id="profile-avatar-img" class="avatar-img" alt="Profile avatar" hidden />
+      </div>
+
+      <div class="profile-meta">
+        <div class="profile-title-row">
+          <h1 id="profile-username">@username</h1>
+          <a id="profile-ig-link" class="external-link" href="#" target="_blank" rel="noopener noreferrer">
+            View on Instagram ↗
+          </a>
+        </div>
+
+        <ul class="profile-stats">
+          <li><strong id="stat-posts">0</strong> posts</li>
+          <li><strong id="stat-stories">0</strong> archived stories</li>
+          <li><strong id="stat-active-stories">0</strong> active (24h)</li>
+        </ul>
+
+        <div class="profile-bio">
+          <p id="profile-fullname" class="fullname"></p>
+          <p id="profile-biography" class="bio-text"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stories Tray (Active 24h + Grouped by Date) -->
+    <section class="stories-section" aria-label="Stories tray">
+      <div class="section-header">
+        <h2>Stories Archive</h2>
+        <span class="section-subtitle">Click any ring to open the fullscreen story player</span>
+      </div>
+      <div id="stories-tray" class="stories-tray"></div>
+    </section>
+
+    <!-- Tabs & Search Bar -->
+    <section class="controls-bar" aria-label="Filter and search">
+      <div class="tabs" role="tablist">
+        <button class="tab-btn active" data-tab="posts" role="tab" aria-selected="true" type="button">
+          Feed Posts
+        </button>
+        <button class="tab-btn" data-tab="stories" role="tab" aria-selected="false" type="button">
+          All Stories
+        </button>
+        <button class="tab-btn" data-tab="videos" role="tab" aria-selected="false" type="button">
+          Videos &amp; Reels
+        </button>
+      </div>
+
+      <div class="search-wrapper">
+        <input
+          id="search-input"
+          type="search"
+          placeholder="Search captions or dates (YYYY-MM-DD)..."
+          aria-label="Search captions or dates"
+        />
+      </div>
+    </section>
+
+    <!-- Main Media Grid -->
+    <section aria-label="Archived media gallery">
+      <div id="empty-state" class="empty-state" hidden>
+        <h3>No archived items match this view yet</h3>
+        <p>
+          Once the GitHub Actions workflow runs with your <code>APIFY_API_TOKEN</code>,
+          downloaded stories and posts will appear here automatically.
+        </p>
+      </div>
+      <div id="media-grid" class="media-grid"></div>
+    </section>
+  </main>
+
+  <!-- Fullscreen Story Viewer Modal -->
+  <div id="story-modal" class="story-modal" role="dialog" aria-modal="true" aria-label="Story player" hidden>
+    <div class="story-player-card">
+      <div id="story-progress-container" class="story-progress-container"></div>
+
+      <div class="story-top-bar">
+        <div class="story-user-info">
+          <span id="story-modal-group-title" class="story-group-title">Stories</span>
+          <span id="story-modal-timestamp" class="story-timestamp"></span>
+        </div>
+        <div class="story-controls">
+          <button id="story-pause-btn" class="icon-btn" type="button" title="Pause / Resume (Space)">⏸</button>
+          <button id="story-mute-btn" class="icon-btn" type="button" title="Mute / Unmute" hidden>🔊</button>
+          <button id="story-close-btn" class="icon-btn" type="button" title="Close (Esc)">✕</button>
+        </div>
+      </div>
+
+      <div class="story-stage">
+        <button id="story-prev-zone" class="story-nav-zone prev" type="button" aria-label="Previous story">‹</button>
+        <div id="story-media-wrapper" class="story-media-wrapper"></div>
+        <button id="story-next-zone" class="story-nav-zone next" type="button" aria-label="Next story">›</button>
+      </div>
+
+      <div class="story-bottom-bar">
+        <p id="story-caption" class="story-caption"></p>
+        <a id="story-permalink" class="story-permalink" href="#" target="_blank" rel="noopener noreferrer">
+          Original link ↗
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Post Lightbox Modal -->
+  <div id="post-modal" class="post-modal" role="dialog" aria-modal="true" aria-label="Post details" hidden>
+    <div class="post-modal-backdrop" id="post-modal-backdrop"></div>
+    <div class="post-modal-content">
+      <button id="post-close-btn" class="post-close-btn" type="button" aria-label="Close modal">✕</button>
+      <div class="post-modal-media">
+        <button id="carousel-prev-btn" class="carousel-btn prev" type="button" aria-label="Previous slide" hidden>‹</button>
+        <div id="post-modal-stage" class="post-modal-stage"></div>
+        <button id="carousel-next-btn" class="carousel-btn next" type="button" aria-label="Next slide" hidden>›</button>
+        <div id="carousel-dots" class="carousel-dots"></div>
+      </div>
+      <div class="post-modal-sidebar">
+        <div class="post-sidebar-header">
+          <strong id="post-modal-username">@username</strong>
+          <span id="post-modal-date" class="post-date"></span>
+        </div>
+        <div id="post-modal-caption" class="post-caption"></div>
+        <div class="post-sidebar-footer">
+          <div class="post-metrics">
+            <span id="post-modal-likes">♥ 0</span>
+            <span id="post-modal-comments">💬 0</span>
+          </div>
+          <a id="post-modal-link" class="external-link" href="#" target="_blank" rel="noopener noreferrer">
+            Open on Instagram ↗
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

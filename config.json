@@ -1,0 +1,11 @@
+{
+  "targetUsername": "yukipanvel",
+  "postsActorId": "apify/instagram-post-scraper",
+  "storiesActorId": "apify/instagram-story-scraper",
+  "resultsLimit": 120,
+  "fetchPosts": true,
+  "fetchStories": true,
+  "maxArchivedPosts": 0,
+  "maxArchivedStories": 0,
+  "downloadTimeoutSeconds": 60
+}

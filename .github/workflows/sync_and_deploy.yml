@@ -1,0 +1,89 @@
+name: Sync Instagram Archive & Deploy GitHub Pages
+
+on:
+  schedule:
+    # Run every 6 hours (4x/day) so 24-hour ephemeral stories are never missed
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      username:
+        description: "Optional Instagram username override (defaults to config.json)"
+        required: false
+        type: string
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "instagram-sync-and-pages"
+  cancel-in-progress: false
+
+jobs:
+  sync-and-build:
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: "scripts/requirements.txt"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r scripts/requirements.txt pytest
+
+      - name: Run unit tests
+        run: pytest
+
+      - name: Sync Instagram Posts & Stories via Apify
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        env:
+          APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
+          IG_TARGET_USERNAME: ${{ github.event.inputs.username }}
+        run: |
+          python scripts/sync_instagram.py
+
+      - name: Commit and push new archived media & manifest
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/data/
+          if git diff --staged --quiet; then
+            echo "No new stories or posts to commit."
+          else
+            git commit -m "chore(archive): sync new Instagram stories and posts [skip ci]"
+            git push
+          fi
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "./docs"
+
+  deploy-pages:
+    needs: sync-and-build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

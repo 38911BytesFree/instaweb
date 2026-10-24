@@ -46,7 +46,7 @@ jobs:
           pip install -r scripts/requirements.txt pytest
 
       - name: Run unit tests
-        run: pytest
+        run: python -m pytest -v
 
       - name: Sync Instagram Posts & Stories via Apify
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'

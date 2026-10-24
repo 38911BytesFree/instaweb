@@ -58,5 +58,5 @@ pytest
 
 # Run a live sync locally
 export APIFY_API_TOKEN="apify_api_..."
-python scripts/sync_instagram.py --username natgeo
+python scripts/sync_instagram.py --username yukipanvel
 ```

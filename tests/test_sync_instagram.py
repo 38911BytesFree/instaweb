@@ -108,7 +108,7 @@ def test_normalize_story_item_image_and_video(tmp_path: Path) -> None:
 
     story = normalize_story_item(
         raw_story,
-        username="natgeo",
+        username="yukipanvel",
         docs_dir=docs_dir,
         session=session,
     )
@@ -193,3 +193,18 @@ def test_sync_archive_end_to_end_and_idempotent(tmp_path: Path) -> None:
     saved_json = json.loads(archive_path.read_text(encoding="utf-8"))
     assert saved_json["posts"][0]["shortcode"] == "POST_A"
     assert saved_json["stories"][0]["id"] == "s1"
+
+    # Changing targetUsername should clear previous user's items and profile metadata
+    config["targetUsername"] = "yukipanvel"
+    result3 = sync_archive(
+        config=config,
+        raw_posts=[],
+        raw_stories=[],
+        docs_dir=docs_dir,
+        archive_path=archive_path,
+        session=session,
+    )
+    assert result3["profile"]["username"] == "yukipanvel"
+    assert result3["profile"]["fullName"] == "yukipanvel"
+    assert result3["posts"] == []
+    assert result3["stories"] == []

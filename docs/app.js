@@ -4,8 +4,7 @@
   const IMAGE_STORY_DURATION_MS = 5000;
 
   // State
-  let archiveData = { profile: {}, stories: [], posts: [] };
-  let isDemoMode = false;
+  let archiveData = { profile: { username: "yukipanvel" }, stories: [], posts: [] };
   let activeTab = "posts";
   let searchQuery = "";
 
@@ -26,7 +25,6 @@
   // DOM Elements
   const els = {
     lastSyncedBadge: document.getElementById("last-synced-badge"),
-    demoToggleBtn: document.getElementById("demo-toggle-btn"),
     avatarRing: document.getElementById("profile-avatar-ring"),
     avatarFallback: document.getElementById("profile-avatar-fallback"),
     avatarImg: document.getElementById("profile-avatar-img"),
@@ -72,109 +70,6 @@
     postComments: document.getElementById("post-modal-comments"),
     postLink: document.getElementById("post-modal-link"),
   };
-
-  function makeSvgCard(title, subtitle, c1, c2) {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="720" height="1280" viewBox="0 0 720 1280">
-      <defs>
-        <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="${c1}"/>
-          <stop offset="100%" stop-color="${c2}"/>
-        </linearGradient>
-      </defs>
-      <rect width="720" height="1280" fill="url(#g)"/>
-      <circle cx="360" cy="480" r="140" fill="rgba(255,255,255,0.12)"/>
-      <text x="360" y="690" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-size="44" font-weight="bold">${title}</text>
-      <text x="360" y="750" text-anchor="middle" fill="rgba(255,255,255,0.82)" font-family="sans-serif" font-size="26">${subtitle}</text>
-    </svg>`;
-    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-  }
-
-  function buildDemoData() {
-    const now = new Date();
-    const twoHoursAgo = new Date(now.getTime() - 2 * 3600 * 1000).toISOString();
-    const fiveHoursAgo = new Date(now.getTime() - 5 * 3600 * 1000).toISOString();
-    const twoDaysAgo = new Date(now.getTime() - 48 * 3600 * 1000).toISOString();
-
-    return {
-      profile: {
-        username: "natgeo",
-        fullName: "National Geographic (Demo Preview)",
-        biography: "Previewing interactive Story Rings & Post Carousels before your first GitHub Actions sync.",
-        avatarLocalPath: makeSvgCard("NG", "Preview", "#f09433", "#bc1888"),
-        lastUpdatedUtc: now.toISOString(),
-      },
-      stories: [
-        {
-          id: "demo_story_1",
-          takenAt: twoHoursAgo,
-          expiresAt: new Date(now.getTime() + 22 * 3600 * 1000).toISOString(),
-          mediaType: "image",
-          localPath: makeSvgCard("Active Story #1", "Captured automatically via Apify", "#bc1888", "#4f8cff"),
-          thumbnailPath: makeSvgCard("S1", "Live", "#bc1888", "#4f8cff"),
-          caption: "Behind the scenes in Patagonia — archived permanently on GitHub Pages.",
-          originalPermalink: "https://www.instagram.com/",
-        },
-        {
-          id: "demo_story_2",
-          takenAt: fiveHoursAgo,
-          expiresAt: new Date(now.getTime() + 19 * 3600 * 1000).toISOString(),
-          mediaType: "image",
-          localPath: makeSvgCard("Active Story #2", "24h Ephemeral Story Saved", "#e6683c", "#dc2743"),
-          thumbnailPath: makeSvgCard("S2", "Live", "#e6683c", "#dc2743"),
-          caption: "Campfire under the southern stars.",
-          originalPermalink: "https://www.instagram.com/",
-        },
-        {
-          id: "demo_story_3",
-          takenAt: twoDaysAgo,
-          expiresAt: new Date(now.getTime() - 24 * 3600 * 1000).toISOString(),
-          mediaType: "image",
-          localPath: makeSvgCard("Archived Story", "Preserved after 24h expiry", "#1e3c72", "#2a5298"),
-          thumbnailPath: makeSvgCard("S3", "Archive", "#1e3c72", "#2a5298"),
-          caption: "Even after expiring on Instagram, stories stay browsable by date here.",
-          originalPermalink: "https://www.instagram.com/",
-        },
-      ],
-      posts: [
-        {
-          id: "demo_post_1",
-          shortcode: "DEMO_CAROUSEL_1",
-          takenAt: fiveHoursAgo,
-          caption: "Multi-slide carousel post archived with local images so CDN links never expire. #photography #archive",
-          likesCount: 1842,
-          commentsCount: 64,
-          mediaType: "carousel",
-          permalink: "https://www.instagram.com/",
-          media: [
-            {
-              type: "image",
-              localPath: makeSvgCard("Carousel Slide 1/2", "Local Media Asset", "#0f2027", "#2c5364"),
-            },
-            {
-              type: "image",
-              localPath: makeSvgCard("Carousel Slide 2/2", "Swipe or Click Arrows", "#3a1c71", "#d76d77"),
-            },
-          ],
-        },
-        {
-          id: "demo_post_2",
-          shortcode: "DEMO_POST_2",
-          takenAt: twoDaysAgo,
-          caption: "Golden hour over the mountain ridge.",
-          likesCount: 930,
-          commentsCount: 21,
-          mediaType: "image",
-          permalink: "https://www.instagram.com/",
-          media: [
-            {
-              type: "image",
-              localPath: makeSvgCard("Feed Post", "Permanent GitHub Pages Archive", "#134e5e", "#71b280"),
-            },
-          ],
-        },
-      ],
-    };
-  }
 
   function formatDateTime(isoStr) {
     if (!isoStr) return "";
@@ -252,7 +147,7 @@
 
   function renderProfile(data) {
     const profile = data.profile || {};
-    const username = profile.username || "instagram";
+    const username = profile.username || "yukipanvel";
     els.username.textContent = `@${username}`;
     els.igLink.href = `https://www.instagram.com/${username}/`;
     els.fullName.textContent = profile.fullName || username;
@@ -285,9 +180,7 @@
     }
 
     if (profile.lastUpdatedUtc) {
-      els.lastSyncedBadge.textContent = isDemoMode
-        ? "Demo Preview Mode"
-        : `Last synced: ${formatDateTime(profile.lastUpdatedUtc)}`;
+      els.lastSyncedBadge.textContent = `Last synced: ${formatDateTime(profile.lastUpdatedUtc)}`;
     } else {
       els.lastSyncedBadge.textContent = "Waiting for first sync";
     }
@@ -585,7 +478,7 @@
     els.postModal.hidden = false;
     document.body.style.overflow = "hidden";
 
-    const username = (archiveData.profile && archiveData.profile.username) || "instagram";
+    const username = (archiveData.profile && archiveData.profile.username) || "yukipanvel";
     els.postUsername.textContent = `@${username}`;
     els.postDate.textContent = formatDateTime(post.takenAt);
     els.postCaption.textContent = post.caption || "";
@@ -639,11 +532,10 @@
   }
 
   function renderAll() {
-    const activeData = isDemoMode ? buildDemoData() : archiveData;
-    storyGroups = buildStoryGroups(activeData.stories || []);
-    renderProfile(activeData);
+    storyGroups = buildStoryGroups(archiveData.stories || []);
+    renderProfile(archiveData);
     renderStoriesTray();
-    renderGrid(activeData);
+    renderGrid(archiveData);
   }
 
   async function init() {
@@ -656,24 +548,7 @@
       console.warn("Could not load data/archive.json:", err);
     }
 
-    const isArchiveEmpty =
-      (!archiveData.stories || archiveData.stories.length === 0) &&
-      (!archiveData.posts || archiveData.posts.length === 0);
-
-    if (isArchiveEmpty) {
-      els.demoToggleBtn.hidden = false;
-      isDemoMode = true;
-      els.demoToggleBtn.textContent = "Exit Demo Preview";
-    }
-
     renderAll();
-
-    // Event Listeners
-    els.demoToggleBtn.addEventListener("click", () => {
-      isDemoMode = !isDemoMode;
-      els.demoToggleBtn.textContent = isDemoMode ? "Exit Demo Preview" : "Preview Demo Data";
-      renderAll();
-    });
 
     els.avatarRing.addEventListener("click", () => {
       if (storyGroups.length > 0) openStoryModal(0, 0);
@@ -688,13 +563,13 @@
         btn.classList.add("active");
         btn.setAttribute("aria-selected", "true");
         activeTab = btn.dataset.tab || "posts";
-        renderGrid(isDemoMode ? buildDemoData() : archiveData);
+        renderGrid(archiveData);
       });
     });
 
     els.searchInput.addEventListener("input", (e) => {
       searchQuery = e.target.value || "";
-      renderGrid(isDemoMode ? buildDemoData() : archiveData);
+      renderGrid(archiveData);
     });
 
     // Story Modal Controls

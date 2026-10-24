@@ -49,7 +49,6 @@ jobs:
         run: python -m pytest -v
 
       - name: Sync Instagram Posts & Stories via Apify
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         env:
           APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
           IG_TARGET_USERNAME: ${{ github.event.inputs.username }}
@@ -57,7 +56,6 @@ jobs:
           python scripts/sync_instagram.py
 
       - name: Commit and push new archived media & manifest
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -66,6 +64,7 @@ jobs:
             echo "No new stories or posts to commit."
           else
             git commit -m "chore(archive): sync new Instagram stories and posts [skip ci]"
+            git pull --rebase origin main
             git push
           fi
 

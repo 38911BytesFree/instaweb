@@ -35,7 +35,7 @@ DEFAULT_ARCHIVE_PATH = DEFAULT_DOCS_DIR / "data" / "archive.json"
 def load_config(config_path: Path = DEFAULT_CONFIG_PATH) -> dict[str, Any]:
     """Load configuration from config.json and apply environment variable overrides."""
     config: dict[str, Any] = {
-        "targetUsername": "natgeo",
+        "targetUsername": "yukipanvel",
         "postsActorId": "apify/instagram-post-scraper",
         "storiesActorId": "apify/instagram-story-scraper",
         "resultsLimit": 12,
@@ -429,11 +429,15 @@ def extract_profile_metadata(
     session: requests.Session | None = None,
 ) -> dict[str, Any]:
     """Update profile metadata (name, bio, avatar) from raw Apify items."""
+    same_user = existing_profile.get("username") == username
     profile = {
         "username": username,
-        "fullName": existing_profile.get("fullName") or username,
-        "biography": existing_profile.get("biography") or "",
-        "avatarLocalPath": existing_profile.get("avatarLocalPath") or "",
+        "fullName": (existing_profile.get("fullName") if same_user else "") or username,
+        "biography": (existing_profile.get("biography") if same_user else "") or "",
+        "avatarLocalPath": (
+            existing_profile.get("avatarLocalPath") if same_user else ""
+        )
+        or "",
         "lastUpdatedUtc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
 
@@ -583,8 +587,21 @@ def sync_archive(
 ) -> dict[str, Any]:
     """Process raw Apify posts & stories, download media, and save updated archive.json."""
     archive = load_archive(archive_path)
-    username = str(config.get("targetUsername", "natgeo")).lstrip("@")
+    username = str(config.get("targetUsername", "yukipanvel")).lstrip("@")
     timeout = int(config.get("downloadTimeoutSeconds", 60))
+
+    # If the configured targetUsername changed from what was previously stored in archive.json,
+    # reset old stories/posts so data from a previous account never leaks in.
+    previous_username = str(archive.get("profile", {}).get("username") or "").strip()
+    if previous_username and previous_username != username:
+        LOGGER.info(
+            "Target username changed from '%s' to '%s'; resetting archived items.",
+            previous_username,
+            username,
+        )
+        archive["stories"] = []
+        archive["posts"] = []
+        archive["profile"] = {"username": username}
 
     existing_post_ids = {
         str(p.get("shortcode") or p.get("id")) for p in archive.get("posts", [])

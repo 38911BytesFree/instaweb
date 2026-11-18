@@ -37,7 +37,7 @@ def load_config(config_path: Path = DEFAULT_CONFIG_PATH) -> dict[str, Any]:
     config: dict[str, Any] = {
         "targetUsername": "yukipanvel",
         "postsActorId": "apify/instagram-post-scraper",
-        "storiesActorId": "apify/instagram-story-scraper",
+        "storiesActorId": "datavoyantlab/instagram-story-downloader",
         "resultsLimit": 12,
         "fetchPosts": True,
         "fetchStories": True,
@@ -345,7 +345,12 @@ def normalize_story_item(
 ) -> dict[str, Any] | None:
     """Normalize a raw Apify story item and download its media into docs/data/media/stories/."""
     story_id = str(
-        raw.get("id") or raw.get("pk") or raw.get("storyId") or raw.get("code") or ""
+        raw.get("id")
+        or raw.get("pk")
+        or raw.get("storyID")
+        or raw.get("storyId")
+        or raw.get("code")
+        or ""
     ).strip()
     if not story_id:
         return None
@@ -369,15 +374,23 @@ def normalize_story_item(
     is_video = bool(
         raw.get("isVideo")
         or str(raw.get("type", "")).lower() == "video"
+        or str(raw.get("mediaType", "")).lower() == "video"
         or raw.get("media_type") == 2
         or raw.get("videoUrl")
         or raw.get("video_versions")
     )
-    video_url = _extract_first_url(raw, ["videoUrl", "video_url"])
-    image_url = _extract_first_url(
-        raw,
-        ["displayUrl", "display_url", "imageUrl", "image_url", "thumbnailUrl"],
-    )
+    video_keys = ["videoUrl", "video_url"] + (["link"] if is_video else [])
+    image_keys = [
+        "displayUrl",
+        "display_url",
+        "imageUrl",
+        "image_url",
+        *(["link"] if not is_video else []),
+        "thumbnailUrl",
+        "thumbnail",
+    ]
+    video_url = _extract_first_url(raw, video_keys)
+    image_url = _extract_first_url(raw, image_keys)
 
     stories_media_dir = docs_dir / "data" / "media" / "stories"
     local_path = ""
@@ -743,6 +756,7 @@ def main(argv: list[str] | None = None) -> int:
 
     raw_posts: list[dict[str, Any]] = []
     raw_stories: list[dict[str, Any]] = []
+    fetch_errors: list[str] = []
 
     if config.get("fetchPosts", True):
         try:
@@ -753,7 +767,8 @@ def main(argv: list[str] | None = None) -> int:
                 results_limit=int(config.get("resultsLimit", 12)),
             )
         except Exception as exc:  # noqa: BLE001
-            LOGGER.warning("Error fetching posts from Apify: %s", exc)
+            LOGGER.error("Error fetching posts from Apify: %s", exc)
+            fetch_errors.append(f"posts: {exc}")
 
     if config.get("fetchStories", True):
         try:
@@ -763,9 +778,16 @@ def main(argv: list[str] | None = None) -> int:
                 username=username,
             )
         except Exception as exc:  # noqa: BLE001
-            LOGGER.warning("Error fetching stories from Apify: %s", exc)
+            LOGGER.error("Error fetching stories from Apify: %s", exc)
+            fetch_errors.append(f"stories: {exc}")
 
     sync_archive(config=config, raw_posts=raw_posts, raw_stories=raw_stories)
+    if fetch_errors:
+        LOGGER.error(
+            "Aborting with non-zero exit code due to Apify fetch errors: %s",
+            "; ".join(fetch_errors),
+        )
+        return 1
     return 0
 
 

@@ -1,7 +1,7 @@
 {
   "targetUsername": "yukipanvel",
   "postsActorId": "apify/instagram-post-scraper",
-  "storiesActorId": "apify/instagram-story-scraper",
+  "storiesActorId": "datavoyantlab/instagram-story-downloader",
   "resultsLimit": 12,
   "fetchPosts": true,
   "fetchStories": true,

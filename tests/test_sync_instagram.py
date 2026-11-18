@@ -208,3 +208,78 @@ def test_sync_archive_end_to_end_and_idempotent(tmp_path: Path) -> None:
     assert result3["profile"]["fullName"] == "yukipanvel"
     assert result3["posts"] == []
     assert result3["stories"] == []
+
+
+def test_normalize_story_item_datavoyantlab_schema(tmp_path: Path) -> None:
+    docs_dir = tmp_path / "docs"
+    session = make_fake_session()
+
+    raw_video_story: dict[str, Any] = {
+        "username": "yukipanvel",
+        "storyID": "4032471323966994284",
+        "thumbnail": "https://cdn.example/story_thumb.jpg",
+        "timestamp": 1794928052,
+        "mediaType": "video",
+        "link": "https://cdn.example/story.mp4",
+    }
+    video_story = normalize_story_item(
+        raw_video_story, username="yukipanvel", docs_dir=docs_dir, session=session
+    )
+    assert video_story is not None
+    assert video_story["id"] == "4032471323966994284"
+    assert video_story["mediaType"] == "video"
+    assert video_story["localPath"] == "data/media/stories/4032471323966994284.mp4"
+    assert (
+        video_story["thumbnailPath"]
+        == "data/media/stories/4032471323966994284_thumb.jpg"
+    )
+
+    raw_image_story: dict[str, Any] = {
+        "username": "yukipanvel",
+        "storyID": "4032471323966994285",
+        "thumbnail": "https://cdn.example/story_thumb.jpg",
+        "timestamp": 1794928055,
+        "mediaType": "image",
+        "link": "https://cdn.example/story_full.jpg",
+    }
+    image_story = normalize_story_item(
+        raw_image_story, username="yukipanvel", docs_dir=docs_dir, session=session
+    )
+    assert image_story is not None
+    assert image_story["id"] == "4032471323966994285"
+    assert image_story["mediaType"] == "image"
+    assert image_story["localPath"] == "data/media/stories/4032471323966994285.jpg"
+    assert image_story["thumbnailPath"] == "data/media/stories/4032471323966994285.jpg"
+
+
+def test_main_returns_nonzero_on_apify_fetch_error(
+    monkeypatch: Any, tmp_path: Path
+) -> None:
+    import scripts.sync_instagram as mod
+
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "targetUsername": "yukipanvel",
+                "postsActorId": "apify/instagram-post-scraper",
+                "storiesActorId": "datavoyantlab/instagram-story-downloader",
+                "fetchPosts": True,
+                "fetchStories": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setenv("APIFY_API_TOKEN", "fake-token")
+    monkeypatch.setattr(mod, "ApifyClient", lambda token: MagicMock())
+    monkeypatch.setattr(
+        mod,
+        "fetch_apify_posts",
+        MagicMock(side_effect=RuntimeError("401 Unauthorized")),
+    )
+    monkeypatch.setattr(mod, "fetch_apify_stories", MagicMock(return_value=[]))
+    monkeypatch.setattr(mod, "sync_archive", MagicMock())
+
+    exit_code = mod.main(["--config", str(config_path)])
+    assert exit_code == 1

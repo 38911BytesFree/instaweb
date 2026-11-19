@@ -37,7 +37,7 @@ def load_config(config_path: Path = DEFAULT_CONFIG_PATH) -> dict[str, Any]:
     config: dict[str, Any] = {
         "targetUsername": "yukipanvel",
         "postsActorId": "apify/instagram-post-scraper",
-        "storiesActorId": "datavoyantlab/instagram-story-downloader",
+        "storiesActorId": "apify/instagram-story-scraper",
         "resultsLimit": 12,
         "fetchPosts": True,
         "fetchStories": True,
